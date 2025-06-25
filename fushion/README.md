@@ -8,14 +8,20 @@ UI from **talking-bubble-verse-main-3**.
 
 ## Running the project
 
-1. Start the FastAPI backend
+1. Create a `.env` file with your OpenAI API key
+
+   ```bash
+   echo "OPENAI_API_KEY=your-key" > .env
+   ```
+
+2. Start the FastAPI backend
 
    ```bash
    cd fushion
    uvicorn main:app --reload
    ```
 
-2. In another terminal start the Vite dev server
+3. In another terminal start the Vite dev server
 
    ```bash
    npm install

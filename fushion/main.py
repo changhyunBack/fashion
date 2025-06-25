@@ -34,6 +34,12 @@ load_dotenv(find_dotenv())
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SECRET         = os.getenv("APP_SECRET", "change-me")
 
+if not OPENAI_API_KEY:
+    raise RuntimeError(
+        "OPENAI_API_KEY environment variable is missing. \n"
+        "Set it in a `.env` file or export it before running the server."
+    )
+
 VECTOR_STORE1_ID = "vs_6822d7e1761881918b5ee78d3d689562"
 VECTOR_STORE2_ID = "vs_6822d7e5e79881919418a3bea0987f89"
 
