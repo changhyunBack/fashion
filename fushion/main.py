@@ -449,35 +449,15 @@ async def chat_stream(req: ChatReq, db: Session = Depends(get_db), user=Depends(
         async for ev in agent.astream_events(state, cfg, version="v1"):
             if not isinstance(ev, dict):
                 continue                      # 문자열 이벤트 무시
-
             t = ev.get("type") or ev.get("event")
             if t is None:
                 continue
-
             if t == "on_tool_start":
                 yield f"[STEP] 🔧 {ev['name']} 호출\n".encode()
             elif t == "on_tool_end":
                 yield f"[OBS] {ev['output']}\n".encode()
-
-            # LangGraph 버전에 따라 토큰 이벤트 이름이 다를 수 있다.
-            elif t in {"on_llm_stream", "on_chat_model_stream"}:
-                token = (
-                    ev.get("delta", {}).get("content")
-                    or ev.get("token")
-                    or ev.get("output", {}).get("token")
-                    or ""
-                )
-                if token:
-                    assistant += token
-                    yield token.encode()
-
-            elif t in {"on_llm_end", "on_chat_model_end"}:
-                chunk = (
-                    ev.get("output", {})
-                    .get("choices", [{"message": {"content": ""}}])[0]
-                    .get("message", {})
-                    .get("content", "")
-                )
+            elif t == "on_llm_end":
+                chunk = ev["output"]["choices"][0]["message"]["content"]
                 assistant += chunk
                 yield chunk.encode()
 
