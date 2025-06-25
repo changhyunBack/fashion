@@ -469,7 +469,7 @@ async def chat_stream(req: ChatReq, db: Session = Depends(get_db), user=Depends(
                 )
                 if token:
                     assistant += token
-                    yield token.encode()
+                    yield f"{token}\n".encode()
 
             elif t in {"on_llm_end", "on_chat_model_end"}:
                 chunk = (
@@ -479,7 +479,8 @@ async def chat_stream(req: ChatReq, db: Session = Depends(get_db), user=Depends(
                     .get("content", "")
                 )
                 assistant += chunk
-                yield chunk.encode()
+                if chunk:
+                    yield f"{chunk}\n".encode()
 
         # ── DB 기록 ----------------------------------------------------
         user_msg = Message(thread_id=req.thread_id, role="user", content=req.question)
@@ -490,7 +491,7 @@ async def chat_stream(req: ChatReq, db: Session = Depends(get_db), user=Depends(
             Message(thread_id=req.thread_id, role="assistant", content=assistant),
         ])
         db.commit()
-        yield b"[DONE]"
+        yield b"[DONE]\n"
 
     return StreamingResponse(
         gen(),
