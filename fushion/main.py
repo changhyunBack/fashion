@@ -457,14 +457,25 @@ async def chat_stream(req: ChatReq, db: Session = Depends(get_db), user=Depends(
                 yield f"[STEP] 🔧 {ev['name']} 호출\n".encode()
             elif t == "on_tool_end":
                 yield f"[OBS] {ev['output']}\n".encode()
-            elif t in ("on_llm_end", "on_chat_model_end"):
-                chunk = ev["output"]["choices"][0]["message"]["content"]
+            elif t in {"on_llm_stream", "on_chat_model_stream"}:
+                token = (
+                    ev.get("delta", {}).get("content")
+                    or ev.get("token")
+                    or ev.get("output", {}).get("token")
+                    or ""
+                )
+                if token:
+                    assistant += token
+                    yield token.encode()
+            elif t in {"on_llm_end", "on_chat_model_end"}:
+                chunk = (
+                    ev.get("output", {})
+                    .get("choices", [{"message": {"content": ""}}])[0]
+                    .get("message", {})
+                    .get("content", "")
+                )
                 assistant += chunk
                 yield (chunk + "\n").encode()
-            elif t in ("on_llm_stream", "on_chat_model_stream"):
-                chunk = ev.get("content") or ev.get("token") or ""
-                assistant += chunk
-                yield chunk.encode()
 
         # ── DB 기록 ----------------------------------------------------
         user_msg = Message(thread_id=req.thread_id, role="user", content=req.question)

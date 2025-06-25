@@ -47,9 +47,9 @@ export const useStreamingChat = (
     });
 
     try {
-      const response = await fetch(`${apiClient['API_BASE'] || 'http://localhost:8000'}/chat/stream`, {
+      const response = await fetch(`${apiClient.API_BASE}/chat/stream`, {
         method: 'POST',
-        headers: apiClient['getHeaders'](),
+        headers: apiClient.getHeaders(),
         body: JSON.stringify({
           thread_id: activeThreadId,
           question: content,
