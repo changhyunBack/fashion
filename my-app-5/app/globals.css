@@ -1,0 +1,11 @@
+:root {
+  --theme-color: #4F46E5;
+  --theme-light: #EEF2FF;
+}
+
+body {
+  margin: 0;
+  background: #e6e6e6;   /* 회색 워크스페이스 */
+  color: #222;
+  font-family: sans-serif;
+}
