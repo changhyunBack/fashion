@@ -47,8 +47,9 @@ VECTOR_STORE2_ID = "vs_6822d7e5e79881919418a3bea0987f89"
 # ── LangGraph 에이전트 ────────────────────────────────────────────────
 #####################################################################
 client = OpenAI(api_key=OPENAI_API_KEY)
-llm    = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
-vision_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+# Enable streaming so the frontend can display partial results in real time
+llm    = ChatOpenAI(model="gpt-4.1-mini", temperature=0, streaming=True)
+vision_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, streaming=True)
 
 # 상태 정의
 class AgentState(TypedDict):
@@ -456,8 +457,12 @@ async def chat_stream(req: ChatReq, db: Session = Depends(get_db), user=Depends(
                 yield f"[STEP] 🔧 {ev['name']} 호출\n".encode()
             elif t == "on_tool_end":
                 yield f"[OBS] {ev['output']}\n".encode()
-            elif t == "on_llm_end":
+            elif t in ("on_llm_end", "on_chat_model_end"):
                 chunk = ev["output"]["choices"][0]["message"]["content"]
+                assistant += chunk
+                yield (chunk + "\n").encode()
+            elif t in ("on_llm_stream", "on_chat_model_stream"):
+                chunk = ev.get("content") or ev.get("token") or ""
                 assistant += chunk
                 yield chunk.encode()
 
