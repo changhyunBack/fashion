@@ -72,19 +72,17 @@ export const useStreamingChat = (
       const steps: StreamStep[] = [];
       let buffer = '';
 
-      let doneStreaming = false;
-      while (!doneStreaming) {
+      while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-        let newlineIndex;
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-          const line = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
-
+        for (const line of lines) {
           if (line.startsWith('[STEP]')) {
+            // 도구 호출 시작
             steps.push({
               type: 'step',
               content: line.replace('[STEP]', '').trim()
@@ -94,6 +92,7 @@ export const useStreamingChat = (
               steps: [...steps]
             }));
           } else if (line.startsWith('[OBS]')) {
+            // 도구 결과
             steps.push({
               type: 'observation',
               content: line.replace('[OBS]', '').trim()
@@ -103,9 +102,10 @@ export const useStreamingChat = (
               steps: [...steps]
             }));
           } else if (line === '[DONE]') {
-            doneStreaming = true;
+            // 스트리밍 완료
             break;
-          } else if (line) {
+          } else if (line.trim()) {
+            // 일반 응답 내용
             accumulatedContent += line;
             setStreamingState(prev => ({
               ...prev,
@@ -113,25 +113,10 @@ export const useStreamingChat = (
             }));
           }
         }
-
-        // 남은 버퍼가 이벤트가 아니라면 일반 응답으로 처리
-        if (
-          buffer &&
-          !buffer.startsWith('[STEP]') &&
-          !buffer.startsWith('[OBS]') &&
-          buffer != '[DONE]'
-        ) {
-          accumulatedContent += buffer;
-          setStreamingState(prev => ({
-            ...prev,
-            currentContent: accumulatedContent
-          }));
-          buffer = '';
-        }
       }
 
-      if (buffer && buffer !== '[DONE]') {
-        accumulatedContent += buffer;
+      if (buffer.trim() && buffer.trim() !== '[DONE]') {
+        accumulatedContent += buffer.trim();
       }
 
       setStreamingState(prev => ({
